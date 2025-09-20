@@ -1,0 +1,56 @@
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+    user_id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    is_manager BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT now()
+);
+
+-- Goals table
+CREATE TABLE IF NOT EXISTS goals (
+    goal_id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    due_date DATE,
+    status TEXT NOT NULL DEFAULT 'Draft', -- Draft, In Progress, Completed, Cancelled
+    owner_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    assignee_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+
+-- Tasks table
+CREATE TABLE IF NOT EXISTS tasks (
+    task_id SERIAL PRIMARY KEY,
+    goal_id INTEGER NOT NULL REFERENCES goals(goal_id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    planned_hours NUMERIC DEFAULT 0,
+    logged_hours NUMERIC DEFAULT 0,
+    status TEXT DEFAULT 'Planned', -- Planned, In Progress, Done
+    created_by INTEGER REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+
+-- Feedback table
+CREATE TABLE IF NOT EXISTS feedback (
+    feedback_id SERIAL PRIMARY KEY,
+    goal_id INTEGER REFERENCES goals(goal_id) ON DELETE SET NULL,
+    task_id INTEGER REFERENCES tasks(task_id) ON DELETE SET NULL,
+    author_id INTEGER REFERENCES users(user_id),
+    is_automated BOOLEAN DEFAULT FALSE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT now()
+);
+
+-- Audit table for goal status changes
+CREATE TABLE IF NOT EXISTS goal_status_audit (
+    audit_id SERIAL PRIMARY KEY,
+    goal_id INTEGER REFERENCES goals(goal_id) ON DELETE CASCADE,
+    old_status TEXT,
+    new_status TEXT,
+    changed_by INTEGER REFERENCES users(user_id),
+    changed_at TIMESTAMP DEFAULT now()
+);
